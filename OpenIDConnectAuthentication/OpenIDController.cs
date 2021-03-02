@@ -11,6 +11,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using Microsoft.Extensions.Configuration;
 
 namespace OpenIDConnectAuthentication
 {
@@ -19,10 +20,12 @@ namespace OpenIDConnectAuthentication
     public class OpenIDController : ControllerBase
     {
         private IHttpClientFactory _httpclientFactory;
+        private readonly IConfiguration _configuration;
 
-        public OpenIDController(IHttpClientFactory httpClientFactory)
+        public OpenIDController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
         {
             _httpclientFactory = httpClientFactory;
+            _configuration = configuration;
         }
 
         [HttpGet]
@@ -34,7 +37,7 @@ namespace OpenIDConnectAuthentication
                 string id_token = "";
                 try
                 {
-                    string response = wc.UploadString("https://login.live.com/oauth20_token.srf", "client_id=cdc45767-c80e-4a7e-9f00-fa0be7007cc1&code=" + code + "&client_secret=UZ64bt2~MY-w8KNaEO1NZ.p3S7o-lR~QU5&grant_type=authorization_code&redirect_uri=https://localhost:44336/openid");
+                    string response = wc.UploadString(_configuration["OpenIDConnect:Microsoft:TokenEndpoint"], $"client_id={_configuration["OpenIDConnect:Microsoft:client_id"]}&code={code}&client_secret={_configuration["OpenIDConnect:Microsoft:client_secret"]}&grant_type=authorization_code&redirect_uri=https://localhost:44336/openid");
 
                     JsonDocument jsonDocument = JsonDocument.Parse(response);
                     string access_token = jsonDocument.RootElement.EnumerateObject().ElementAt(3).Value.ToString();
@@ -53,6 +56,7 @@ namespace OpenIDConnectAuthentication
                 {
                     var handler = new JwtSecurityTokenHandler();
                     var token = handler.ReadJwtToken(id_token);
+                    token.Claims.ToList().Add(new System.Security.Claims.Claim("test", "testClaim"));
 
                     StringBuilder sb = new StringBuilder();
                     foreach (System.Security.Claims.Claim item in token.Claims)

@@ -18,6 +18,15 @@ namespace OpenIDConnectAuthentication
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
+            .ConfigureAppConfiguration((hostingContext, config) =>
+            {
+                config.AddJsonFile("appsettings.json", false, true);
+
+                if(hostingContext.HostingEnvironment.IsDevelopment())
+                {
+                    config.AddUserSecrets<Program>();
+                }
+            })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();

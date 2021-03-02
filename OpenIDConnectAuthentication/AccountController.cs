@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Text;
+using Microsoft.Extensions.Configuration;
 
 namespace OpenIDConnectAuthentication
 {
@@ -14,12 +15,19 @@ namespace OpenIDConnectAuthentication
     [ApiController]
     public class AccountController : ControllerBase
     {
+        private readonly IConfiguration _configuration;
+
+        public AccountController(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
+
         [HttpGet]
         [Route("Login")]
         public IActionResult Login()
         {
             var properties = new Microsoft.AspNetCore.Authentication.AuthenticationProperties() { RedirectUri = "account/LoginTest" };
-            return Redirect("https://login.live.com/oauth20_authorize.srf?client_id=cdc45767-c80e-4a7e-9f00-fa0be7007cc1&redirect_uri=https%3A%2F%2Flocalhost%3A44336%2Fopenid&response_type=code&scope=openid%20profile%20email");
+            return Redirect($"{_configuration["OpenIDConnect:Microsoft:AuthorizationEndPoint"]}client_id=cdc45767-c80e-4a7e-9f00-fa0be7007cc1&redirect_uri=https%3A%2F%2Flocalhost%3A44336%2Fopenid&response_type=code&scope=openid%20profile%20email");
         }
 
 
