@@ -26,8 +26,13 @@ namespace OpenIDConnectAuthentication
         [Route("Login")]
         public IActionResult Login()
         {
-            var properties = new Microsoft.AspNetCore.Authentication.AuthenticationProperties() { RedirectUri = "account/LoginTest" };
-            return Redirect($"{_configuration["OpenIDConnect:Microsoft:AuthorizationEndPoint"]}client_id=cdc45767-c80e-4a7e-9f00-fa0be7007cc1&redirect_uri=https%3A%2F%2Flocalhost%3A44336%2Fopenid&response_type=code&scope=openid%20profile%20email");
+            string authorizationEndpoint = _configuration["OpenIDConnect:Microsoft:AuthorizationEndPoint"];
+            string client_id = _configuration["OpenIDConnect:Microsoft:client_id"];
+            string redirect_uri = _configuration["OpenIDConnect:Microsoft:redirect_uri"];
+            string response_type = _configuration["OpenIDConnect:Microsoft:response_type"];
+            string scope = _configuration["OpenIDConnect:Microsoft:scope"];
+
+            return Redirect($"{authorizationEndpoint}client_id={client_id}&redirect_uri={redirect_uri}&response_type={response_type}&scope={scope}");
         }
 
 

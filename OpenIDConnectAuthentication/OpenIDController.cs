@@ -19,12 +19,10 @@ namespace OpenIDConnectAuthentication
     [ApiController]
     public class OpenIDController : ControllerBase
     {
-        private IHttpClientFactory _httpclientFactory;
         private readonly IConfiguration _configuration;
 
-        public OpenIDController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+        public OpenIDController(IConfiguration configuration)
         {
-            _httpclientFactory = httpClientFactory;
             _configuration = configuration;
         }
 
@@ -56,7 +54,6 @@ namespace OpenIDConnectAuthentication
                 {
                     var handler = new JwtSecurityTokenHandler();
                     var token = handler.ReadJwtToken(id_token);
-                    token.Claims.ToList().Add(new System.Security.Claims.Claim("test", "testClaim"));
 
                     StringBuilder sb = new StringBuilder();
                     foreach (System.Security.Claims.Claim item in token.Claims)
