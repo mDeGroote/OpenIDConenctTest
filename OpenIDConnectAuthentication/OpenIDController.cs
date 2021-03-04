@@ -11,6 +11,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using Microsoft.Extensions.Configuration;
 
 namespace OpenIDConnectAuthentication
 {
@@ -18,15 +19,15 @@ namespace OpenIDConnectAuthentication
     [ApiController]
     public class OpenIDController : ControllerBase
     {
-        private IHttpClientFactory _httpclientFactory;
+        private readonly IConfiguration _configuration;
 
-        public OpenIDController(IHttpClientFactory httpClientFactory)
+        public OpenIDController(IConfiguration configuration)
         {
-            _httpclientFactory = httpClientFactory;
+            _configuration = configuration;
         }
 
-        [HttpGet]
-        public string GetCode([FromQuery] string code)
+        [HttpPost]
+        public string GetCode([FromForm] string code)
         {
             using (WebClient wc = new WebClient())
             {
@@ -34,7 +35,7 @@ namespace OpenIDConnectAuthentication
                 string id_token = "";
                 try
                 {
-                    string response = wc.UploadString("https://login.live.com/oauth20_token.srf", "client_id=cdc45767-c80e-4a7e-9f00-fa0be7007cc1&code=" + code + "&client_secret=UZ64bt2~MY-w8KNaEO1NZ.p3S7o-lR~QU5&grant_type=authorization_code&redirect_uri=https://localhost:44336/openid");
+                    string response = wc.UploadString("https://login.live.com/oauth20_token.srf", $"client_id={_configuration["OpenIDconnect:Microsoft:client_id"]}&code={code}&client_secret={_configuration["OpenIDconnect:Microsoft:client_secret"]}&grant_type=authorization_code&redirect_uri=https://localhost:44336/openid");
 
                     JsonDocument jsonDocument = JsonDocument.Parse(response);
                     string access_token = jsonDocument.RootElement.EnumerateObject().ElementAt(3).Value.ToString();
