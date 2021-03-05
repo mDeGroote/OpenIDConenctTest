@@ -12,6 +12,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace OpenIDConnectAuthentication
 {
@@ -41,15 +43,27 @@ namespace OpenIDConnectAuthentication
             {
                 options.LoginPath = "/account/Login";
             })
+            .AddJwtBearer("jwt", options =>
+            {
+                options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+                {
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("dojsfhsdjhfkdjshfksdhfkjdhfhsbfhjxs")),
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidAudience = "cdc45767-c80e-4a7e-9f00-fa0be7007cc1",
+                    ValidIssuer = "localhost"
+                };
+            })
             .AddOpenIdConnect("Microsoft", options =>
             {
                 options.Authority = "https://login.live.com";
-                options.ResponseType = "code";
-                options.ResponseMode = "form_post";
+                options.ResponseType = Microsoft.IdentityModel.Protocols.OpenIdConnect.OpenIdConnectResponseType.Code;
+                options.ResponseMode = Microsoft.IdentityModel.Protocols.OpenIdConnect.OpenIdConnectResponseMode.FormPost;
                 options.ClientId = _configuration["OpenIDConnect:Microsoft:client_id"];
                 options.ClientSecret = _configuration["OpenIDConnect:Microsoft:client_secret"];
                 options.SaveTokens = true;
                 options.GetClaimsFromUserInfoEndpoint = true;
+                options.UsePkce = true;
             });
         }
 
@@ -67,7 +81,7 @@ namespace OpenIDConnectAuthentication
             app.UseRouting();
 
             app.UseAuthentication();
-            //app.UseAuthorization();
+            app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {

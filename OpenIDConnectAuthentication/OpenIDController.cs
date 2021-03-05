@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Authorization;
 
 namespace OpenIDConnectAuthentication
 {
@@ -24,6 +25,13 @@ namespace OpenIDConnectAuthentication
         public OpenIDController(IConfiguration configuration)
         {
             _configuration = configuration;
+        }
+
+        [HttpGet]
+        [Authorize(AuthenticationSchemes = "jwt")]
+        public ActionResult TestJwt()
+        {
+            return Ok();
         }
 
         [HttpPost]

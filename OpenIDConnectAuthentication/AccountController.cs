@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Text;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.Tokens;
 
 namespace OpenIDConnectAuthentication
 {
@@ -26,16 +28,19 @@ namespace OpenIDConnectAuthentication
 
         [HttpGet]
         [Route("LoginTest")]
-        public string LoginTest()
+        public IActionResult LoginTest()
         {
-            StringBuilder sb = new StringBuilder();
-            foreach (System.Security.Claims.Claim item in HttpContext.User.Claims)
-            {
-                sb.Append($"type: {item.Type}, value: {item.Value}, issuer: {item.Issuer} \n");
-            }
+            var tokenHandler = new JwtSecurityTokenHandler();
 
-            sb.Append($"name: {HttpContext.User.Identity.Name} \n");
-            return $"{HttpContext.User.Identity.Name} {HttpContext.User.Identity.AuthenticationType} {sb.ToString()}";
+            var jwttoken = new SecurityTokenDescriptor
+            {
+                Issuer = "localhost",
+                Subject = new System.Security.Claims.ClaimsIdentity(HttpContext.User.Claims),
+                Expires = DateTime.UtcNow.AddHours(1),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes("dojsfhsdjhfkdjshfksdhfkjdhfhsbfhjxs")), SecurityAlgorithms.HmacSha256Signature)
+            };
+
+            return Ok(new { token = tokenHandler.WriteToken(tokenHandler.CreateToken(jwttoken)), expiration = jwttoken.Expires });
         }
 
         [HttpGet]
