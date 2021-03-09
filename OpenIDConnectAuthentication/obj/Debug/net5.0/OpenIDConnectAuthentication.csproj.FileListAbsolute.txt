@@ -74,3 +74,5 @@ C:\Users\maria\source\repos\OpenIDConnectAuthenticationTest\OpenIDConnectAuthent
 C:\Users\maria\source\repos\OpenIDConnectAuthenticationTest\OpenIDConnectAuthentication\obj\Debug\net5.0\ref\OpenIDConnectAuthentication.dll
 C:\Users\maria\source\repos\OpenIDConnectAuthenticationTest\OpenIDConnectAuthentication\obj\Debug\net5.0\OpenIDConnectAuthentication.pdb
 C:\Users\maria\source\repos\OpenIDConnectAuthenticationTest\OpenIDConnectAuthentication\obj\Debug\net5.0\OpenIDConnectAuthentication.genruntimeconfig.cache
+C:\Users\maria\source\repos\OpenIDConnectAuthenticationTest\OpenIDConnectAuthentication\bin\Debug\net5.0\AuthSample.pvk
+C:\Users\maria\source\repos\OpenIDConnectAuthenticationTest\OpenIDConnectAuthentication\bin\Debug\net5.0\AuthSample.pfx

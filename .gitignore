@@ -1,1 +1,6 @@
-.vs/
+.vs
+/OpenIDConnectAuthentication/bin
+/OpenIDConnectAuthentication/obj
+/OpenIDConnectAuthentication/AuthSample.cer
+/OpenIDConnectAuthentication/AuthSample.pfx
+/OpenIDConnectAuthentication/AuthSample.pvk

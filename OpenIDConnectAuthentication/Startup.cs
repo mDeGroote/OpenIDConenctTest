@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Security.Cryptography.X509Certificates;
 
 namespace OpenIDConnectAuthentication
 {
@@ -47,11 +48,14 @@ namespace OpenIDConnectAuthentication
             {
                 options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
                 {
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("dojsfhsdjhfkdjshfksdhfkjdhfhsbfhjxs")),
                     ValidateIssuer = true,
                     ValidateAudience = true,
-                    ValidAudience = "cdc45767-c80e-4a7e-9f00-fa0be7007cc1",
-                    ValidIssuer = "localhost"
+                    ValidAudience = "localhost",
+                    ValidIssuer = "localhost",
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero,
+                    RequireSignedTokens = false,
+                    TokenDecryptionKey = new RsaSecurityKey(new X509Certificate2("AuthSample.pfx", "password", X509KeyStorageFlags.Exportable).GetRSAPrivateKey().ExportParameters(true))
                 };
             })
             .AddOpenIdConnect("Microsoft", options =>

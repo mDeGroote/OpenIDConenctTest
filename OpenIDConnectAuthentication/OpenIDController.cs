@@ -13,6 +13,9 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 
 namespace OpenIDConnectAuthentication
 {
@@ -31,6 +34,22 @@ namespace OpenIDConnectAuthentication
         [Authorize(AuthenticationSchemes = "jwt")]
         public ActionResult TestJwt()
         {
+
+            //var handler = new JwtSecurityTokenHandler();
+
+            //var TokenDecryptionKey = new X509SecurityKey(new System.Security.Cryptography.X509Certificates.X509Certificate2(@"C:\Users\maria\source\repos\OpenIDConnectAuthenticationTest\OpenIDConnectAuthentication\AuthSample.pfx", "password"));
+
+            //var claimsprincipal = handler.ValidateToken(token, new TokenValidationParameters
+            //{
+            //    ValidAudience = "localhost",
+            //    ValidIssuer = "localhost",
+            //    RequireSignedTokens = false,
+            //    TokenDecryptionKey = new RsaSecurityKey(new System.Security.Cryptography.X509Certificates.X509Certificate2("AuthSample.pfx", "password", System.Security.Cryptography.X509Certificates.X509KeyStorageFlags.Exportable).GetRSAPrivateKey().ExportParameters(true))
+
+            //}, out SecurityToken securityToken);
+
+
+
             return Ok();
         }
 

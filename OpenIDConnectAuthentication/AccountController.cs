@@ -32,15 +32,16 @@ namespace OpenIDConnectAuthentication
         {
             var tokenHandler = new JwtSecurityTokenHandler();
 
-            var jwttoken = new SecurityTokenDescriptor
+            var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Issuer = "localhost",
+                Audience = "localhost",
                 Subject = new System.Security.Claims.ClaimsIdentity(HttpContext.User.Claims),
-                Expires = DateTime.UtcNow.AddHours(1),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes("dojsfhsdjhfkdjshfksdhfkjdhfhsbfhjxs")), SecurityAlgorithms.HmacSha256Signature)
+                Expires = DateTime.UtcNow.AddMinutes(1),
+                EncryptingCredentials = new X509EncryptingCredentials(new System.Security.Cryptography.X509Certificates.X509Certificate2("AuthSample.pfx", "password", System.Security.Cryptography.X509Certificates.X509KeyStorageFlags.Exportable))
             };
 
-            return Ok(new { token = tokenHandler.WriteToken(tokenHandler.CreateToken(jwttoken)), expiration = jwttoken.Expires });
+            return Ok(new { token = tokenHandler.CreateEncodedJwt(tokenDescriptor), expiration = tokenDescriptor.Expires });
         }
 
         [HttpGet]
