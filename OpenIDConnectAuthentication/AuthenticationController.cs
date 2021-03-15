@@ -29,6 +29,9 @@ namespace OpenIDConnectAuthentication
         [Route("login")]
         public IActionResult Login([FromQuery]Uri returnurl)
         {
+            if (!returnurl.IsAbsoluteUri)
+                return StatusCode(500);
+
             if (!HttpContext.User.Identity.IsAuthenticated)
             {
                 return Challenge("Microsoft");
