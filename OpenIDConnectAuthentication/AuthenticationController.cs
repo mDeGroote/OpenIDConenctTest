@@ -11,6 +11,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using System.Net.Http;
 using Microsoft.Extensions.Configuration;
+using System.Security.Cryptography;
 
 namespace OpenIDConnectAuthentication
 {
@@ -18,11 +19,11 @@ namespace OpenIDConnectAuthentication
     [ApiController]
     public class AuthenticationController : ControllerBase
     {
-        private readonly IConfiguration _configuration;
+        private readonly IJwtService _jwtService;
 
-        public AuthenticationController(IConfiguration configuration)
+        public AuthenticationController(IJwtService jwtService)
         {
-            _configuration = configuration;
+            _jwtService = jwtService;
         }
 
         [HttpGet]
@@ -30,48 +31,37 @@ namespace OpenIDConnectAuthentication
         public IActionResult Login([FromQuery]Uri returnurl)
         {
             if (!returnurl.IsAbsoluteUri)
-                return StatusCode(500);
+                return StatusCode(400, new { Errormessage = "return url is invalid"});
 
             if (!HttpContext.User.Identity.IsAuthenticated)
             {
                 return Challenge("Microsoft");
             }
 
-            string token = CreateJwtToken(returnurl.Authority);
-            Response.Cookies.Append("jwttoken", token);
+            string access_token = _jwtService.CreateJwtToken("", HttpContext);
+            RefreshToken refresh_token = _jwtService.CreateRefreshToken(HttpContext);
+            var cookieoptions = new CookieOptions();
+            cookieoptions.HttpOnly = true;
+
+            Response.Cookies.Append("access_token", access_token);
+            Response.Cookies.Append("refresh_token", refresh_token.Token, cookieoptions);
 
             return Redirect(returnurl.AbsoluteUri);
         }
 
         [HttpGet]
         [Route("logout")]
-        public IActionResult Logout([FromQuery]Uri returnurl)
+        public IActionResult Logout([FromQuery] Uri returnurl)
         {
+            if (!returnurl.IsAbsoluteUri)
+                return StatusCode(400, new { Errormessage = "return url is invalid"});
+
             if (!HttpContext.User.Identity.IsAuthenticated)
                 return Redirect(returnurl.AbsoluteUri);
 
             Microsoft.AspNetCore.Authentication.AuthenticationHttpContextExtensions.SignOutAsync(HttpContext, Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme);
 
             return Redirect(returnurl.AbsoluteUri);
-        }
-
-        private string CreateJwtToken(string audience)
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-
-            var key = Encoding.ASCII.GetBytes(_configuration["signingkey"]);
-
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Issuer = "localhost",
-                Audience = audience,
-                Expires = DateTime.UtcNow.AddMinutes(15),
-                Subject = new System.Security.Claims.ClaimsIdentity(new List<System.Security.Claims.Claim> { HttpContext.User.Claims.First(x => x.Type == "preferred_username") }),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256)
-            };
-
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
         }
     }
 }

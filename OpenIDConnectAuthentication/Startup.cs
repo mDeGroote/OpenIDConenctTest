@@ -12,6 +12,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Cryptography;
+using Microsoft.EntityFrameworkCore;
 
 namespace OpenIDConnectAuthentication
 {
@@ -28,7 +31,11 @@ namespace OpenIDConnectAuthentication
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddHttpClient();
+            services.AddDbContext<DataContext>(options =>
+                options.UseSqlServer("Data Source=LAPTOP-UHC60CLA;Initial Catalog=master;Integrated Security=True"));
+
+            services.AddScoped<IJwtService, JwtService>();
+
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
@@ -36,13 +43,21 @@ namespace OpenIDConnectAuthentication
             });
 
             services.AddAuthentication(options =>
-            {
-                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-            })
-            .AddCookie(options =>
-            {
-                options.LoginPath = "/authentication/login";
-            })
+        {
+            options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        })
+        .AddCookie(options =>
+        {
+            options.ExpireTimeSpan = TimeSpan.FromDays(1);
+        })
+            //.AddMicrosoftAccount("Microsoft", options =>
+            //{
+            //    options.ClientId = _configuration["OpenIDConnect:Microsoft:client_id"];
+            //    options.ClientSecret = _configuration["OpenIDConnect:Microsoft:client_secret"];
+            //    options.UsePkce = true;
+            //    options.CallbackPath = "/signin-oidc";
+            //    options.UserInformationEndpoint = "https://graph.microsoft.com/v1.0/me";
+            //});
             .AddOpenIdConnect("Microsoft", options =>
             {
                 options.Authority = "https://login.live.com";
@@ -50,7 +65,6 @@ namespace OpenIDConnectAuthentication
                 options.ResponseMode = Microsoft.IdentityModel.Protocols.OpenIdConnect.OpenIdConnectResponseMode.FormPost;
                 options.ClientId = _configuration["OpenIDConnect:Microsoft:client_id"];
                 options.ClientSecret = _configuration["OpenIDConnect:Microsoft:client_secret"];
-                options.GetClaimsFromUserInfoEndpoint = true;
             });
         }
 
