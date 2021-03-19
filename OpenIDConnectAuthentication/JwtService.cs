@@ -7,13 +7,14 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace OpenIDConnectAuthentication
 {
     public interface IJwtService
     {
-        public string CreateJwtToken(string audience, HttpContext httpContext);
-        public RefreshToken CreateRefreshToken(HttpContext httpContext);
+        public string CreateJwtToken(string audience, HttpContext httpContext, string identityProvider);
+        public RefreshToken CreateRefreshToken(HttpContext httpContext, string identityProvider);
         public TokenPair CheckRefreshToken(string token, HttpContext httpContext);
 
     }
@@ -22,14 +23,16 @@ namespace OpenIDConnectAuthentication
     {
         private readonly IConfiguration _configuration;
         private readonly DataContext _dataContext;
+        private readonly IClaimsMapper _claimsMapper;
 
-        public JwtService(IConfiguration configuration, DataContext dataContext)
+        public JwtService(IConfiguration configuration, DataContext dataContext, IClaimsMapper claimsMapper)
         {
             _configuration = configuration;
             _dataContext = dataContext;
+            _claimsMapper = claimsMapper;
         }
 
-        public string CreateJwtToken(string audience, HttpContext httpContext)
+        public string CreateJwtToken(string audience, HttpContext httpContext, string identityProvider)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
 
@@ -39,12 +42,16 @@ namespace OpenIDConnectAuthentication
                 bytesRead: out int _
             );
 
+            List<Claim> claims = new List<Claim>();
+            claims.Add(new Claim("UniqueIndentifier", httpContext.User.Claims.First(x => x.Type ==_claimsMapper.GetClaim("UniqueIdentifier", identityProvider)).Value));
+            claims.Add(new Claim("Name", httpContext.User.Claims.First(x => x.Type == _claimsMapper.GetClaim("Name", identityProvider)).Value));
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Issuer = "localhost",
                 Audience = audience,
                 Expires = DateTime.UtcNow.AddMinutes(15),
-                Subject = new System.Security.Claims.ClaimsIdentity(new List<System.Security.Claims.Claim> { httpContext.User.Claims.First(x => x.Type == "preferred_username") }),
+                Subject = new ClaimsIdentity(claims),
                 SigningCredentials = new SigningCredentials(new RsaSecurityKey(rsa), SecurityAlgorithms.RsaSha256)
             };
 
@@ -52,7 +59,7 @@ namespace OpenIDConnectAuthentication
             return tokenHandler.WriteToken(token);
         }
 
-        public RefreshToken CreateRefreshToken(HttpContext httpContext)
+        public RefreshToken CreateRefreshToken(HttpContext httpContext, string identityProvider)
         {
             using (var rngCryptoServiceProvider = new RNGCryptoServiceProvider())
             {
@@ -63,7 +70,8 @@ namespace OpenIDConnectAuthentication
                     Token = Convert.ToBase64String(randomBytes),
                     Expires = DateTime.UtcNow.AddDays(1),
                     Created = DateTime.UtcNow,
-                    UserNameIdentifier = httpContext.User.Claims.First(x => x.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier").Value
+                    UserNameIdentifier = httpContext.User.Claims.First(x => x.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier").Value,
+                    IdentityProvider = identityProvider
                 };
 
                 _dataContext.RefreshTokens.Add(refresh_token);
@@ -86,8 +94,8 @@ namespace OpenIDConnectAuthentication
             if (httpContext.User.Claims.First(x => x.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier").Value != refreshToken.UserNameIdentifier)
                 return null;
 
-            RefreshToken newRefreshToken = CreateRefreshToken(httpContext);
-            string access_token = CreateJwtToken("", httpContext);
+            RefreshToken newRefreshToken = CreateRefreshToken(httpContext, refreshToken.IdentityProvider);
+            string access_token = CreateJwtToken("", httpContext, refreshToken.IdentityProvider);
             refreshToken.Revoked = DateTime.UtcNow;
             refreshToken.ReplacedByToken = newRefreshToken.Token;
 

@@ -19,5 +19,6 @@ namespace OpenIDConnectAuthentication
         public DateTime? Revoked { get; set; }
         public string ReplacedByToken { get; set; }
         public bool IsActive => Revoked == null && !IsExpired;
+        public string IdentityProvider { get; set; }
     }
 }

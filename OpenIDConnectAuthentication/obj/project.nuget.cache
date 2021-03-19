@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "VjO62FmBjkDOrg0DC/9dWO6Jd4og6TD8XZqZ7wPGLuy00VcAbrx/obqrrY4DxBpIhM4DMvZDxT1JaR4ys/4Rqg==",
+  "dgSpecHash": "k5B9uBzvBX8NrRmtT6Y3ffzG3GzX+0N0FPDGNQZ7xJsuE5NttjBRMjimuRPp5qKTmGarL3+c8T5+pO7W0qsHOg==",
   "success": true,
   "projectFilePath": "C:\\Users\\maria\\source\\repos\\OpenIDConnectAuthenticationTest\\OpenIDConnectAuthentication\\OpenIDConnectAuthentication.csproj",
   "expectedPackageFiles": [
@@ -8,6 +8,7 @@
     "C:\\Users\\maria\\.nuget\\packages\\microsoft.aspnetcore.authentication.abstractions\\2.2.0\\microsoft.aspnetcore.authentication.abstractions.2.2.0.nupkg.sha512",
     "C:\\Users\\maria\\.nuget\\packages\\microsoft.aspnetcore.authentication.cookies\\2.2.0\\microsoft.aspnetcore.authentication.cookies.2.2.0.nupkg.sha512",
     "C:\\Users\\maria\\.nuget\\packages\\microsoft.aspnetcore.authentication.core\\2.2.0\\microsoft.aspnetcore.authentication.core.2.2.0.nupkg.sha512",
+    "C:\\Users\\maria\\.nuget\\packages\\microsoft.aspnetcore.authentication.google\\5.0.4\\microsoft.aspnetcore.authentication.google.5.0.4.nupkg.sha512",
     "C:\\Users\\maria\\.nuget\\packages\\microsoft.aspnetcore.authentication.jwtbearer\\5.0.3\\microsoft.aspnetcore.authentication.jwtbearer.5.0.3.nupkg.sha512",
     "C:\\Users\\maria\\.nuget\\packages\\microsoft.aspnetcore.authentication.microsoftaccount\\5.0.3\\microsoft.aspnetcore.authentication.microsoftaccount.5.0.3.nupkg.sha512",
     "C:\\Users\\maria\\.nuget\\packages\\microsoft.aspnetcore.authentication.openidconnect\\5.0.3\\microsoft.aspnetcore.authentication.openidconnect.5.0.3.nupkg.sha512",

@@ -93,7 +93,7 @@ namespace OpenIDConnectAuthentication
         [Route("Key")]
         public IActionResult GetPublicSigningkey()
         {
-            return Ok(new {key = _configuration["jwt:publickey"] });
+            return Ok(new {Public_key = _configuration["jwt:publickey"] });
         }
     }
 }

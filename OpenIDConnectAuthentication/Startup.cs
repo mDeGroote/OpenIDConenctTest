@@ -31,10 +31,13 @@ namespace OpenIDConnectAuthentication
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddControllersWithViews();
+
             services.AddDbContext<DataContext>(options =>
                 options.UseSqlServer("Data Source=LAPTOP-UHC60CLA;Initial Catalog=master;Integrated Security=True"));
 
             services.AddScoped<IJwtService, JwtService>();
+            services.AddScoped<IClaimsMapper, ClaimsMapper>();
 
             services.AddControllers();
             services.AddSwaggerGen(c =>
@@ -58,6 +61,11 @@ namespace OpenIDConnectAuthentication
             //    options.CallbackPath = "/signin-oidc";
             //    options.UserInformationEndpoint = "https://graph.microsoft.com/v1.0/me";
             //});
+            .AddGoogle("Google", options =>
+            {
+                options.ClientId = _configuration["Google:client_id"];
+                options.ClientSecret = _configuration["Google:client_secret"];
+            })
             .AddOpenIdConnect("Microsoft", options =>
             {
                 options.Authority = "https://login.live.com";
@@ -86,7 +94,9 @@ namespace OpenIDConnectAuthentication
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapControllers();
+                endpoints.MapControllerRoute(
+                    name: "default",
+                    pattern: "{Controller}/{action}");
                 endpoints.MapGet("/", async context =>
                 {
                     await context.Response.WriteAsync("Hello World!");
