@@ -29,69 +29,77 @@ namespace OpenIDConnectAuthentication
         [HttpGet]
         public IActionResult Index([FromQuery]Uri returnurl)
         {
-            if (!returnurl.IsAbsoluteUri)
-                return StatusCode(400, new { Errormessage = "return url is invalid" });
+            if (!CheckUri(returnurl))
+                return BadRequest(new { Errormessage = "returnurl is invalid" });
 
             if (HttpContext.User.Identity.IsAuthenticated)
-                return FinishLogin(new AuthenticationRequest() { ReturnURL = returnurl , IdentityProvider = HttpContext.User.Claims.First(x => x.Type == "IdentityProvider").Value});
+                return FinishLogin(returnurl, HttpContext.User.Claims.First(x => x.Type == "IdentityProvider").Value);
 
             return View("~/Views/Authentication/Index.cshtml", returnurl.AbsoluteUri);
         }
 
         [HttpGet]
-        [Route("loginmicrosoft")]
-        public IActionResult MicrosoftLogin([FromQuery] Uri returnurl)
+        [Route("{identityprovider}")]
+        public IActionResult FinishLogin([FromQuery] Uri returnurl, string identityprovider)
         {
-            if (!HttpContext.User.Identity.IsAuthenticated || HttpContext.User.Claims.First(x => x.Type == "IdentityProvider").Value != "Google")
+            if (!CheckUri(returnurl))
+                return BadRequest(new { Errormessage = "returnurl is invalid" });
+
+            if (!HttpContext.User.Identity.IsAuthenticated)
             {
-                return Challenge("Microsoft");
+                return Challenge(identityprovider);
             }
 
-            return FinishLogin(new AuthenticationRequest() { ReturnURL = returnurl, IdentityProvider = "Microsoft"});
+            string access_token = _jwtService.CreateJwtToken(returnurl.Host, HttpContext.User.Claims, identityprovider);
+
+
+            RefreshToken refresh_token = _jwtService.HasExistingRefreshToken(HttpContext.User.Claims);
+            if(refresh_token == null)
+                refresh_token = _jwtService.CreateRefreshToken(HttpContext.User.Claims, identityprovider);
+
+            var refreshTokenCookieOptions = new CookieOptions();
+            refreshTokenCookieOptions.HttpOnly = true;
+
+            HttpContext.User.Claims.Append(new System.Security.Claims.Claim("IdentityProvider", identityprovider));
+            Response.Cookies.Append("access_token", access_token);
+            Response.Cookies.Append("refresh_token", refresh_token.Token, refreshTokenCookieOptions);
+
+            return Redirect(returnurl.AbsoluteUri);
+
         }
-
-        [HttpGet]
-        [Route("logingoogle")]
-        public IActionResult GoogleLogin([FromQuery] Uri returnurl)
-        {
-            if (!HttpContext.User.Identity.IsAuthenticated || HttpContext.User.Claims.First(x => x.Type == "IdentityProvider").Value != "Google")
-            {
-                return Challenge("Google");
-            }
-
-            return FinishLogin(new AuthenticationRequest() { ReturnURL = returnurl, IdentityProvider = "Google"});
-        }
-
-
 
         [HttpGet]
         [Route("logout")]
         public IActionResult Logout([FromQuery] Uri returnurl)
         {
-            if (!returnurl.IsAbsoluteUri)
-                return StatusCode(400, new { Errormessage = "return url is invalid"});
+            if (!CheckUri(returnurl))
+                return BadRequest(new { Errormessage = "returnurl is invalid" });
 
             if (!HttpContext.User.Identity.IsAuthenticated)
                 return Redirect(returnurl.AbsoluteUri);
 
+            _jwtService.RevokeRefreshToken(Request.Cookies["refresh_token"]);
             Microsoft.AspNetCore.Authentication.AuthenticationHttpContextExtensions.SignOutAsync(HttpContext, Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme);
 
             return Redirect(returnurl.AbsoluteUri);
         }
 
-        private IActionResult FinishLogin(AuthenticationRequest authenticationRequest)
+        private bool CheckUri(Uri uri)
         {
+            if (uri == null)
+                return false;
 
-            string access_token = _jwtService.CreateJwtToken("", HttpContext, authenticationRequest.IdentityProvider);
-            RefreshToken refresh_token = _jwtService.CreateRefreshToken(HttpContext, authenticationRequest.IdentityProvider);
-            var cookieoptions = new CookieOptions();
-            cookieoptions.HttpOnly = true;
+            try
+            {
+                if (!uri.IsAbsoluteUri)
+                    return false;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
 
-            HttpContext.User.Claims.Append(new System.Security.Claims.Claim("IdentityProvider", authenticationRequest.IdentityProvider));
-            Response.Cookies.Append("access_token", access_token);
-            Response.Cookies.Append("refresh_token", refresh_token.Token, cookieoptions);
-
-            return Redirect(authenticationRequest.ReturnURL.AbsoluteUri);
+            return true;
         }
     }
 }

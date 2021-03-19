@@ -31,34 +31,10 @@ namespace OpenIDConnectAuthentication
         [Route("verify")]
         public IActionResult VerifyToken([FromForm]string token)
         {
-            var tokenHandler = new JwtSecurityTokenHandler();
+            if(_jwtService.ReadAccessToken(token) != null)
+                return Ok();
 
-            RSA rsa = RSA.Create();
-            rsa.ImportRSAPublicKey(
-                source: Convert.FromBase64String(_configuration["jwt:publickey"]),
-                bytesRead: out int _
-            );
-
-            try
-            {
-                var claims = tokenHandler.ValidateToken(token, new TokenValidationParameters
-                {
-                    ValidateAudience = false,
-                    ValidateIssuer = true,
-                    ValidIssuer = "localhost",
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ClockSkew = TimeSpan.Zero,
-                    IssuerSigningKey = new RsaSecurityKey(rsa)
-                }, out SecurityToken securityToken);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest();
-            }
-
-            return Ok();
-            
+            return BadRequest(new { Errormessage = "Invalid JWT token" });
         }
 
         [HttpGet]
@@ -69,11 +45,18 @@ namespace OpenIDConnectAuthentication
 
             //Is the user is not authenticated, they can authenticate themselves and retrieve a new access_token and refresh_token
             if (!HttpContext.User.Identity.IsAuthenticated)
-                return LocalRedirect("/authentication/login?returnurl=" + referer);
+                return LocalRedirect("/authentication?returnurl=" + referer);
 
             string refresh_token = Request.Cookies["refresh_token"];
+            string access_token = Request.Cookies["access_token"];
+            if(access_token == null)
+                return BadRequest(new { Errormessage = "access_token was not present" });
 
-            TokenPair tokenPair = _jwtService.CheckRefreshToken(refresh_token, HttpContext);
+            JwtSecurityToken token = _jwtService.ReadAccessToken(access_token);
+            if (token == null)
+                return BadRequest(new { Errormessage = "invalid access_token" });
+
+            TokenPair tokenPair = _jwtService.CheckRefreshToken(refresh_token,token.Audiences.ElementAt(0), HttpContext.User.Claims);
 
             CookieOptions cookieOptions = new CookieOptions();
             cookieOptions.HttpOnly = true;

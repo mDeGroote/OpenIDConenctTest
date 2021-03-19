@@ -96,7 +96,7 @@ namespace OpenIDConnectAuthentication
             {
                 endpoints.MapControllerRoute(
                     name: "default",
-                    pattern: "{Controller}/{action}");
+                    pattern: "{Controller}/{action}/{id}");
                 endpoints.MapGet("/", async context =>
                 {
                     await context.Response.WriteAsync("Hello World!");
