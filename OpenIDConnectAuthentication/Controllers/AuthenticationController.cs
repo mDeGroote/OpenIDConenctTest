@@ -27,45 +27,48 @@ namespace OpenIDConnectAuthentication
         }
 
         [HttpGet]
-        public IActionResult Index([FromQuery]Uri returnurl)
+        public IActionResult Index([FromQuery]Uri redirect_uri, [FromQuery]string state, [FromQuery]string nonce)
         {
-            if (!CheckUri(returnurl))
-                return BadRequest(new { Errormessage = "returnurl is invalid" });
+            if (!CheckUri(redirect_uri))
+                return BadRequest(new { Errormessage = "redirect_uri is invalid" });
 
             if (HttpContext.User.Identity.IsAuthenticated)
-                return FinishLogin(returnurl, HttpContext.User.Claims.First(x => x.Type == "IdentityProvider").Value);
+                return FinishLogin(redirect_uri, state, nonce, HttpContext.User.Claims.First(x => x.Type == "IdentityProvider").Value);
 
-            return View("~/Views/Authentication/Index.cshtml", returnurl.AbsoluteUri);
+            return View("~/Views/Authentication/Index.cshtml", new AuthenticationRequest() { ReturnURL = redirect_uri, State = state, Nonce = nonce});
         }
 
         [HttpGet]
         [Route("{identityprovider}")]
-        public IActionResult FinishLogin([FromQuery] Uri returnurl, string identityprovider)
+        public IActionResult FinishLogin([FromQuery] Uri returnurl, [FromQuery] string state, [FromQuery]string nonce, string identityprovider)
         {
             if (!CheckUri(returnurl))
-                return BadRequest(new { Errormessage = "returnurl is invalid" });
+                return BadRequest(new { Errormessage = "redirect_uri is invalid" });
 
             if (!HttpContext.User.Identity.IsAuthenticated)
             {
                 return Challenge(identityprovider);
             }
 
-            string access_token = _jwtService.CreateJwtToken(returnurl.Host, HttpContext.User.Claims, identityprovider);
-
+            string id_token = _jwtService.CreateJwtToken(returnurl.Host, HttpContext.User.Claims, identityprovider, nonce);
 
             RefreshToken refresh_token = _jwtService.HasExistingRefreshToken(HttpContext.User.Claims);
-            if(refresh_token == null)
+            if (refresh_token == null)
                 refresh_token = _jwtService.CreateRefreshToken(HttpContext.User.Claims, identityprovider);
 
             var refreshTokenCookieOptions = new CookieOptions();
             refreshTokenCookieOptions.HttpOnly = true;
+            refreshTokenCookieOptions.SameSite = SameSiteMode.Lax;
 
             HttpContext.User.Claims.Append(new System.Security.Claims.Claim("IdentityProvider", identityprovider));
-            Response.Cookies.Append("access_token", access_token);
             Response.Cookies.Append("refresh_token", refresh_token.Token, refreshTokenCookieOptions);
 
-            return Redirect(returnurl.AbsoluteUri);
-
+            return new ContentResult()
+            {
+                ContentType = "text/html",
+                StatusCode = 200,
+                Content = "<html><head><title>Submit This Form</title></head><body onload = \"javascript:document.forms[0].submit()\" ><form method = \"post\" action = \"" + returnurl + "\" ><input type =\"hidden\" name = \"nonce\" value = \"" + nonce + "\"/><input type =\"hidden\" name = \"state\" value = \"" + state + "\"/><input type =\"hidden\" name = \"id_token\" value = \"" + id_token + "\"/></form></body></html>"
+            };
         }
 
         [HttpGet]

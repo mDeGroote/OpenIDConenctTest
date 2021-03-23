@@ -9,5 +9,7 @@ namespace OpenIDConnectAuthentication
     {
         public Uri ReturnURL { get; set; }
         public string IdentityProvider { get; set; }
+        public string Nonce { get; set; }
+        public string State { get; set; }
     }
 }

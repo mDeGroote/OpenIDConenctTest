@@ -13,7 +13,7 @@ namespace OpenIDConnectAuthentication
 {
     public interface IJwtService
     {
-        string CreateJwtToken(string audience, IEnumerable<Claim> userclaims, string identityProvider);
+        string CreateJwtToken(string audience, IEnumerable<Claim> userclaims, string identityProvider, string nonce = null);
         RefreshToken CreateRefreshToken(IEnumerable<Claim> userclaims, string identityProvider);
         TokenPair CheckRefreshToken(string token, string audience, IEnumerable<Claim> userclaims);
         RefreshToken HasExistingRefreshToken(IEnumerable<Claim> userclaims);
@@ -34,7 +34,7 @@ namespace OpenIDConnectAuthentication
             _claimsMapper = claimsMapper;
         }
 
-        public string CreateJwtToken(string audience, IEnumerable<Claim> userclaims, string identityProvider)
+        public string CreateJwtToken(string audience, IEnumerable<Claim> userclaims, string identityProvider, string nonce = null)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
 
@@ -44,17 +44,19 @@ namespace OpenIDConnectAuthentication
                 bytesRead: out int _
             );
 
-            List<Claim> claims = new List<Claim>();
-            claims.Add(new Claim("UniqueIndentifier", userclaims.First(x => x.Type ==_claimsMapper.GetClaim("UniqueIdentifier", identityProvider)).Value));
-            claims.Add(new Claim("Name", userclaims.First(x => x.Type == _claimsMapper.GetClaim("Name", identityProvider)).Value));
+            Dictionary<string, object> claims = new Dictionary<string, object>();
+            claims.Add("sub", userclaims.First(x => x.Type == _claimsMapper.GetClaim("UniqueIdentifier", identityProvider)).Value);
+            claims.Add("name", userclaims.First(x => x.Type == _claimsMapper.GetClaim("Name", identityProvider)).Value);
+            if(nonce != null)
+                claims.Add("nonce", nonce);
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
+                Expires = DateTime.UtcNow.AddMinutes(15),
                 Issuer = "localhost",
                 Audience = audience,
-                Expires = DateTime.UtcNow.AddMinutes(15),
-                Subject = new ClaimsIdentity(claims),
-                SigningCredentials = new SigningCredentials(new RsaSecurityKey(rsa), SecurityAlgorithms.RsaSha256)
+                SigningCredentials = new SigningCredentials(new RsaSecurityKey(rsa), SecurityAlgorithms.RsaSha256),
+                Claims = claims
             };
 
             var token = tokenHandler.CreateToken(tokenDescriptor);

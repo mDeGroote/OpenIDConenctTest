@@ -15,6 +15,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
+using System.Net.Http;
 
 namespace OpenIDConnectAuthentication
 {
@@ -73,6 +74,7 @@ namespace OpenIDConnectAuthentication
                 options.ResponseMode = Microsoft.IdentityModel.Protocols.OpenIdConnect.OpenIdConnectResponseMode.FormPost;
                 options.ClientId = _configuration["OpenIDConnect:Microsoft:client_id"];
                 options.ClientSecret = _configuration["OpenIDConnect:Microsoft:client_secret"];
+                options.CallbackPath = "/signin-oidc";
             });
         }
 

@@ -1,10 +1,10 @@
 ﻿@{
-    @model string
+    @model OpenIDConnectAuthentication.AuthenticationRequest
 }
 
-<a href="https://localhost:44336/authentication/Microsoft?returnurl=@Model">
+<a href="https://localhost:44336/authentication/Microsoft?returnurl=@Model.ReturnURL&nonce=@Model.Nonce&state=@Model.State">
     <input type="submit" value="Login with Microsoft" class="btn btn-primary" />
 </a>
-<a href="https://localhost:44336/authentication/Google?returnurl=@Model">
+<a href="https://localhost:44336/authentication/Google?returnurl=@Model.ReturnURL&nonce=@Model.Nonce&state=@Model.State">
     <input type="submit" value="Login with Google" class="btn btn-primary" />
 </a>
