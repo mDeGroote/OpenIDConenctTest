@@ -10,6 +10,11 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using OpenIddict.Server.AspNetCore;
+using Microsoft.AspNetCore;
+using OpenIddict.Abstractions;
+using Microsoft.AspNetCore.Authentication;
+using System.Security.Claims;
 
 namespace OpenIDConnectAuthentication
 {
@@ -70,6 +75,32 @@ namespace OpenIDConnectAuthentication
             }
 
             return BadRequest(new {Errormessage = "Refresh token is invalid" });
+        }
+
+        [HttpPost("tokens")]
+        public async Task<IActionResult> Tokens()
+        {
+            var request = HttpContext.GetOpenIddictServerRequest();
+
+            if (!request.IsAuthorizationCodeGrantType())
+            {
+                return BadRequest(new { Error_message = "invalid grant_type" });
+            }
+
+            var claimsPrincipal = (await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)).Principal;
+            //string id_token = _jwtService.CreateJwtToken("localhost", claimsPrincipal.Claims, claimsPrincipal.Claims.First(x => x.Type == "identityProvider").Value);
+
+            //RefreshToken refresh_token = _jwtService.HasExistingRefreshToken(claimsPrincipal.Claims);
+            //if (refresh_token == null)
+            //    refresh_token = _jwtService.CreateRefreshToken(claimsPrincipal.Claims, "Micrososoft");
+
+            //var refreshTokenCookieOptions = new CookieOptions();
+            //refreshTokenCookieOptions.HttpOnly = true;
+            //refreshTokenCookieOptions.SameSite = SameSiteMode.Lax;
+
+            //Response.Cookies.Append("refresh_token", refresh_token.Token, refreshTokenCookieOptions);
+
+            return SignIn(claimsPrincipal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
 
         [HttpGet]

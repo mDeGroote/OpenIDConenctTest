@@ -12,6 +12,11 @@ using Microsoft.IdentityModel.Tokens;
 using System.Net.Http;
 using Microsoft.Extensions.Configuration;
 using System.Security.Cryptography;
+using OpenIddict.Server.AspNetCore;
+using System.Security.Claims;
+using OpenIddict.Abstractions;
+using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Authentication;
 
 namespace OpenIDConnectAuthentication
 {
@@ -20,56 +25,79 @@ namespace OpenIDConnectAuthentication
     public class AuthenticationController : Controller
     {
         private readonly IJwtService _jwtService;
+        private readonly DataContext _dataContext;
+        private readonly IClaimsMapper _claimsMapper;
 
-        public AuthenticationController(IJwtService jwtService)
+        public AuthenticationController(IJwtService jwtService, DataContext dataContext, IClaimsMapper claimsMapper)
         {
             _jwtService = jwtService;
+            _dataContext = dataContext;
+            _claimsMapper = claimsMapper;
         }
 
         [HttpGet]
-        public IActionResult Index([FromQuery]Uri redirect_uri, [FromQuery]string state, [FromQuery]string nonce)
+        public async Task<IActionResult> Index([FromQuery]Uri redirect_uri, [FromQuery]string state, [FromQuery]string nonce, [FromQuery]string identityprovider, [FromQuery]string client_id, [FromQuery]string scope, [FromQuery]string response_type)
         {
             if (!CheckUri(redirect_uri))
                 return BadRequest(new { Errormessage = "redirect_uri is invalid" });
 
-            if (HttpContext.User.Identity.IsAuthenticated)
-                return FinishLogin(redirect_uri, state, nonce, HttpContext.User.Claims.First(x => x.Type == "IdentityProvider").Value);
+            var result = await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
 
-            return View("~/Views/Authentication/Index.cshtml", new AuthenticationRequest() { ReturnURL = redirect_uri, State = state, Nonce = nonce});
-        }
-
-        [HttpGet]
-        [Route("{identityprovider}")]
-        public IActionResult FinishLogin([FromQuery] Uri returnurl, [FromQuery] string state, [FromQuery]string nonce, string identityprovider)
-        {
-            if (!CheckUri(returnurl))
-                return BadRequest(new { Errormessage = "redirect_uri is invalid" });
-
-            if (!HttpContext.User.Identity.IsAuthenticated)
+            if (result.Succeeded)
             {
-                return Challenge(identityprovider);
+                var claimsPrincipal = result.Principal;
+
+                return SignIn(claimsPrincipal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+            }
+            else if(HttpContext.User.Identity.IsAuthenticated)
+            {
+                var request = HttpContext.GetOpenIddictServerRequest();
+
+                var claims = new List<Claim>();
+
+                if (identityprovider == null)
+                    identityprovider = User.Claims.First(x => x.Type == "identityProvider").Value;
+                else
+                    User.Claims.Append(new Claim("identityProvider", identityprovider));
+
+                claims.Add(new Claim(OpenIddictConstants.Claims.Subject, User.Claims.First(x => x.Type == _claimsMapper.GetClaim("Name", identityprovider)).Value).SetDestinations(OpenIddictConstants.Destinations.IdentityToken));
+                claims.Add(new Claim("identityProvider", identityprovider).SetDestinations(OpenIddictConstants.Destinations.IdentityToken));
+
+                var claimsIdentity = new ClaimsIdentity(claims, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+                var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
+                claimsPrincipal.SetScopes(request.GetScopes());
+                //return FinishLogin(redirect_uri, state, nonce, HttpContext.User.Claims.First(x => x.Type == "IdentityProvider").Value);
+                return SignIn(claimsPrincipal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+            }
+            else
+            {
+                if (identityprovider == null)
+                    return View("~/Views/Authentication/Index.cshtml", new AuthenticationRequest() { ReturnURL = redirect_uri, State = state, Nonce = nonce, Client_id = client_id, Scope = scope, Response_type = response_type });
+                else
+                    return Challenge(identityprovider);
             }
 
-            string id_token = _jwtService.CreateJwtToken(returnurl.Host, HttpContext.User.Claims, identityprovider, nonce);
-
-            RefreshToken refresh_token = _jwtService.HasExistingRefreshToken(HttpContext.User.Claims);
-            if (refresh_token == null)
-                refresh_token = _jwtService.CreateRefreshToken(HttpContext.User.Claims, identityprovider);
-
-            var refreshTokenCookieOptions = new CookieOptions();
-            refreshTokenCookieOptions.HttpOnly = true;
-            refreshTokenCookieOptions.SameSite = SameSiteMode.Lax;
-
-            HttpContext.User.Claims.Append(new System.Security.Claims.Claim("IdentityProvider", identityprovider));
-            Response.Cookies.Append("refresh_token", refresh_token.Token, refreshTokenCookieOptions);
-
-            return new ContentResult()
-            {
-                ContentType = "text/html",
-                StatusCode = 200,
-                Content = "<html><head><title>Submit This Form</title></head><body onload = \"javascript:document.forms[0].submit()\" ><form method = \"post\" action = \"" + returnurl + "\" ><input type =\"hidden\" name = \"nonce\" value = \"" + nonce + "\"/><input type =\"hidden\" name = \"state\" value = \"" + state + "\"/><input type =\"hidden\" name = \"id_token\" value = \"" + id_token + "\"/></form></body></html>"
-            };
         }
+
+        //[HttpGet]
+        //[Route("{identityprovider}")]
+        //public IActionResult FinishLogin([FromQuery] Uri returnurl, [FromQuery] string state, [FromQuery]string nonce, string identityprovider)
+        //{
+        //    if (!CheckUri(returnurl))
+        //        return BadRequest(new { Errormessage = "redirect_uri is invalid" });
+
+        //    if (!HttpContext.User.Identity.IsAuthenticated)
+        //    {
+        //        return Challenge(identityprovider);
+        //    }
+
+            //return new ContentResult()
+            //{
+            //    ContentType = "text/html",
+            //    StatusCode = 200,
+            //    Content = "<html><head><title>Submit This Form</title></head><body onload = \"javascript:document.forms[0].submit()\" ><form method = \"post\" action = \"" + returnurl + "\" ><input type =\"hidden\" name = \"nonce\" value = \"" + nonce + "\"/><input type =\"hidden\" name = \"state\" value = \"" + state + "\"/><input type =\"hidden\" name = \"id_token\" value = \"" + id_token + "\"/></form></body></html>"
+            //};
+        //}
 
         [HttpGet]
         [Route("logout")]

@@ -16,6 +16,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Http;
+using AspNet.Security.OpenIdConnect.Primitives;
 
 namespace OpenIDConnectAuthentication
 {
@@ -35,10 +36,72 @@ namespace OpenIDConnectAuthentication
             services.AddControllersWithViews();
 
             services.AddDbContext<DataContext>(options =>
-                options.UseSqlServer("Data Source=LAPTOP-UHC60CLA;Initial Catalog=master;Integrated Security=True"));
+            {
+                // Configure the context to use Microsoft SQL Server.
+                options.UseSqlServer("Data Source=LAPTOP-UHC60CLA;Initial Catalog=openiddict;Integrated Security=True");
+
+                // Register the entity sets needed by OpenIddict.
+                // Note: use the generic overload if you need
+                // to replace the default OpenIddict entities.
+                options.UseOpenIddict();
+            });
+
+            services.AddOpenIddict()
+
+                // Register the OpenIddict core components.
+                .AddCore(options =>
+                {
+                    // Configure OpenIddict to use the Entity Framework Core stores and models.
+                    // Note: call ReplaceDefaultEntities() to replace the default entities.
+                    options.UseEntityFrameworkCore()
+                                   .UseDbContext<DataContext>();
+                })
+
+                // Register the OpenIddict server components.
+                .AddServer(options =>
+                {
+                    
+                    options.RegisterScopes(OpenIdConnectConstants.Scopes.Email,
+                        OpenIdConnectConstants.Scopes.OpenId,
+                        OpenIdConnectConstants.Scopes.Profile,
+                        "testScope");
+                    // Enable the token endpoint.
+                    options.SetTokenEndpointUris("/jwt/tokens");
+                    options.SetAuthorizationEndpointUris("/authentication");
+
+                    options.AllowAuthorizationCodeFlow();
+
+                     RSA rsa = RSA.Create();
+                    rsa.ImportRSAPrivateKey(
+                        source: Convert.FromBase64String(_configuration["jwt:privatekey"]),
+                        bytesRead: out int _
+                    );
+                    
+                    // Register the signing and encryption credentials.
+                    options.AddDevelopmentEncryptionCertificate()
+                                  .AddSigningKey(new RsaSecurityKey(rsa));
+
+                    // Register the ASP.NET Core host and configure the ASP.NET Core options.
+                    options.UseAspNetCore()
+                                  .EnableTokenEndpointPassthrough()
+                                  .EnableAuthorizationEndpointPassthrough();
+                })
+
+                // Register the OpenIddict validation components.
+                .AddValidation(options =>
+                {
+                    // Import the configuration from the local OpenIddict server instance.
+                    options.UseLocalServer();
+
+                    // Register the ASP.NET Core host.
+                    options.UseAspNetCore();
+                });
 
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<IClaimsMapper, ClaimsMapper>();
+            // Register the worker responsible of seeding the database with the sample clients.
+            // Note: in a real world application, this step should be part of a setup script.
+            services.AddHostedService<Worker>();
 
             services.AddControllers();
             services.AddSwaggerGen(c =>
@@ -47,21 +110,13 @@ namespace OpenIDConnectAuthentication
             });
 
             services.AddAuthentication(options =>
-        {
-            options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-        })
-        .AddCookie(options =>
-        {
-            options.ExpireTimeSpan = TimeSpan.FromDays(1);
-        })
-            //.AddMicrosoftAccount("Microsoft", options =>
-            //{
-            //    options.ClientId = _configuration["OpenIDConnect:Microsoft:client_id"];
-            //    options.ClientSecret = _configuration["OpenIDConnect:Microsoft:client_secret"];
-            //    options.UsePkce = true;
-            //    options.CallbackPath = "/signin-oidc";
-            //    options.UserInformationEndpoint = "https://graph.microsoft.com/v1.0/me";
-            //});
+            {
+                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            })
+            .AddCookie(options =>
+            {
+                options.ExpireTimeSpan = TimeSpan.FromDays(1);
+            })
             .AddGoogle("Google", options =>
             {
                 options.ClientId = _configuration["Google:client_id"];
