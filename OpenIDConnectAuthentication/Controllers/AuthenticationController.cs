@@ -36,7 +36,7 @@ namespace OpenIDConnectAuthentication
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index([FromQuery]Uri redirect_uri, [FromQuery]string state, [FromQuery]string nonce, [FromQuery]string identityprovider, [FromQuery]string client_id, [FromQuery]string scope, [FromQuery]string response_type)
+        public async Task<IActionResult> Index([FromQuery]Uri redirect_uri, [FromQuery]string state, [FromQuery]string nonce, [FromQuery]string identityprovider, [FromQuery]string client_id, [FromQuery]string scope, [FromQuery]string response_type, [FromQuery] string code_challenge, [FromQuery] string code_challenge_method)
         {
             if (!CheckUri(redirect_uri))
                 return BadRequest(new { Errormessage = "redirect_uri is invalid" });
@@ -72,7 +72,7 @@ namespace OpenIDConnectAuthentication
             else
             {
                 if (identityprovider == null)
-                    return View("~/Views/Authentication/Index.cshtml", new AuthenticationRequest() { ReturnURL = redirect_uri, State = state, Nonce = nonce, Client_id = client_id, Scope = scope, Response_type = response_type });
+                    return View("~/Views/Authentication/Index.cshtml", new AuthenticationRequest() { ReturnURL = redirect_uri, State = state, Nonce = nonce, Client_id = client_id, Scope = scope, Response_type = response_type, Code_challenge = code_challenge, Code_challenge_method = code_challenge_method });
                 else
                     return Challenge(identityprovider);
             }

@@ -82,7 +82,7 @@ namespace OpenIDConnectAuthentication
         {
             var request = HttpContext.GetOpenIddictServerRequest();
 
-            if (!request.IsAuthorizationCodeGrantType())
+            if (!request.IsAuthorizationCodeGrantType() && !request.IsRefreshTokenGrantType())
             {
                 return BadRequest(new { Error_message = "invalid grant_type" });
             }

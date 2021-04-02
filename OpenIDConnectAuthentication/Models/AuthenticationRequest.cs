@@ -14,5 +14,7 @@ namespace OpenIDConnectAuthentication
         public string Client_id { get; set; }
         public string Scope { get; set; }
         public string Response_type { get; set; }
+        public string Code_challenge { get; set; }
+        public string Code_challenge_method { get; set; }
     }
 }

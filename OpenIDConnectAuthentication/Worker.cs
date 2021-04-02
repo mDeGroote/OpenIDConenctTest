@@ -33,15 +33,17 @@ namespace OpenIDConnectAuthentication
                 {
                     ClientId = "console",
                     ClientSecret = "388D45FA-B36B-4988-BA59-B187D329C207",
+                    RedirectUris = { new Uri("https://localhost:44380/signin-oidc")},
                     DisplayName = "My client application",
                     Permissions =
                 {
                     Permissions.Endpoints.Token,
                     Permissions.ResponseTypes.Code,
                     Permissions.GrantTypes.AuthorizationCode,
+                    Permissions.GrantTypes.RefreshToken,
                     Permissions.Endpoints.Authorization,
                     Permissions.Scopes.Profile,
-                    Permissions.Scopes.Email
+                    Permissions.Scopes.Email,
                 }
                 });
             }

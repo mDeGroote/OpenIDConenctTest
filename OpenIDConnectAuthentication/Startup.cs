@@ -60,14 +60,15 @@ namespace OpenIDConnectAuthentication
                 // Register the OpenIddict server components.
                 .AddServer(options =>
                 {
-                    
+
                     options.RegisterScopes(OpenIdConnectConstants.Scopes.Email,
                         OpenIdConnectConstants.Scopes.OpenId,
-                        OpenIdConnectConstants.Scopes.Profile,
-                        "testScope");
+                        OpenIdConnectConstants.Scopes.Profile);
                     // Enable the token endpoint.
                     options.SetTokenEndpointUris("/jwt/tokens");
-                    options.SetAuthorizationEndpointUris("/authentication");
+                    options.SetAuthorizationEndpointUris("/authentication").RequireProofKeyForCodeExchange();
+                    options.DisableAccessTokenEncryption();
+                    options.AllowRefreshTokenFlow();
 
                     options.AllowAuthorizationCodeFlow();
 
@@ -78,8 +79,7 @@ namespace OpenIDConnectAuthentication
                     );
                     
                     // Register the signing and encryption credentials.
-                    options.AddDevelopmentEncryptionCertificate()
-                                  .AddSigningKey(new RsaSecurityKey(rsa));
+                    options.AddSigningKey(new RsaSecurityKey(rsa)).AddDevelopmentEncryptionCertificate();
 
                     // Register the ASP.NET Core host and configure the ASP.NET Core options.
                     options.UseAspNetCore()
