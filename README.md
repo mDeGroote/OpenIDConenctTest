@@ -1,4 +1,4 @@
-# OpenIDConnectTest
+# openiddict
 
 Dit project is bedoeld om een beeld te vormen van het opensource product "Openiddict".
 Openiddict maakt het makkelijker om een applicatie om te bouwen tot een Openid connect server.
