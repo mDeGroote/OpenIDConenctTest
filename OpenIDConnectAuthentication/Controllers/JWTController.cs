@@ -31,7 +31,7 @@ namespace OpenIDConnectAuthentication
         [Route("verify")]
         public IActionResult VerifyToken([FromForm]string token)
         {
-            if(_jwtService.ReadAccessToken(token) != null)
+            if(_jwtService.ReadIdToken(token) != null)
                 return Ok();
 
             return BadRequest(new { Errormessage = "Invalid JWT token" });
@@ -43,18 +43,18 @@ namespace OpenIDConnectAuthentication
         {
             string referer = Request.Headers["referer"];
 
-            //Is the user is not authenticated, they can authenticate themselves and retrieve a new access_token and refresh_token
+            //Is the user is not authenticated, they can authenticate themselves and retrieve a new id token and refresh token
             if (!HttpContext.User.Identity.IsAuthenticated)
                 return LocalRedirect("/authentication?returnurl=" + referer);
 
             string refresh_token = Request.Cookies["refresh_token"];
-            string access_token = Request.Cookies["access_token"];
-            if(access_token == null)
-                return BadRequest(new { Errormessage = "access_token was not present" });
+            string id_token = Request.Cookies["id_token"];
+            if(id_token == null)
+                return BadRequest(new { Errormessage = "id_token was not present" });
 
-            JwtSecurityToken token = _jwtService.ReadAccessToken(access_token);
+            JwtSecurityToken token = _jwtService.ReadIdToken(id_token);
             if (token == null)
-                return BadRequest(new { Errormessage = "invalid access_token" });
+                return BadRequest(new { Errormessage = "invalid id_token" });
 
             TokenPair tokenPair = _jwtService.CheckRefreshToken(refresh_token,token.Audiences.ElementAt(0), HttpContext.User.Claims);
 
@@ -63,7 +63,7 @@ namespace OpenIDConnectAuthentication
 
             if(tokenPair != null)
             {
-                Response.Cookies.Append("access_token", tokenPair.access_token);
+                Response.Cookies.Append("id_token", tokenPair.id_token);
                 Response.Cookies.Append("refresh_token", tokenPair.refresh_token, cookieOptions);
 
                 return Redirect(referer);

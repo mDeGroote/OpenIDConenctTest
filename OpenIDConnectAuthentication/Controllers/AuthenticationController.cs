@@ -45,13 +45,16 @@ namespace OpenIDConnectAuthentication
             if (!CheckUri(returnurl))
                 return BadRequest(new { Errormessage = "redirect_uri is invalid" });
 
+            //if user isnt authenticated, let him authenticate with chosen identityprovider
             if (!HttpContext.User.Identity.IsAuthenticated)
             {
                 return Challenge(identityprovider);
             }
 
+            //create token for user
             string id_token = _jwtService.CreateJwtToken(returnurl.Host, HttpContext.User.Claims, identityprovider, nonce);
 
+            //use existing refresh_token is user authenticated earlier
             RefreshToken refresh_token = _jwtService.HasExistingRefreshToken(HttpContext.User.Claims);
             if (refresh_token == null)
                 refresh_token = _jwtService.CreateRefreshToken(HttpContext.User.Claims, identityprovider);
@@ -63,6 +66,7 @@ namespace OpenIDConnectAuthentication
             HttpContext.User.Claims.Append(new System.Security.Claims.Claim("IdentityProvider", identityprovider));
             Response.Cookies.Append("refresh_token", refresh_token.Token, refreshTokenCookieOptions);
 
+            //POST the user to the redirect_uri with the JWT token
             return new ContentResult()
             {
                 ContentType = "text/html",

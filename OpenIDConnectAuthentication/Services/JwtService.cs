@@ -18,7 +18,7 @@ namespace OpenIDConnectAuthentication
         TokenPair CheckRefreshToken(string token, string audience, IEnumerable<Claim> userclaims);
         RefreshToken HasExistingRefreshToken(IEnumerable<Claim> userclaims);
         void RevokeRefreshToken(string token);
-        JwtSecurityToken ReadAccessToken(string token);
+        JwtSecurityToken ReadIdToken(string token);
     }
 
     public class JwtService : IJwtService
@@ -99,14 +99,14 @@ namespace OpenIDConnectAuthentication
                 return null;
 
             RefreshToken newRefreshToken = CreateRefreshToken(userclaims, refreshToken.IdentityProvider);
-            string access_token = CreateJwtToken(audience, userclaims, refreshToken.IdentityProvider);
+            string id_token = CreateJwtToken(audience, userclaims, refreshToken.IdentityProvider);
             refreshToken.Revoked = DateTime.UtcNow;
             refreshToken.ReplacedByToken = newRefreshToken.Token;
 
             _dataContext.Update(refreshToken);
             _dataContext.SaveChanges();
 
-            return new TokenPair(access_token, newRefreshToken.Token);
+            return new TokenPair(id_token, newRefreshToken.Token);
         }
 
         public RefreshToken HasExistingRefreshToken(IEnumerable<Claim> userclaims)
@@ -133,7 +133,7 @@ namespace OpenIDConnectAuthentication
             _dataContext.SaveChanges();
         }
 
-        public JwtSecurityToken ReadAccessToken(string token)
+        public JwtSecurityToken ReadIdToken(string token)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
 

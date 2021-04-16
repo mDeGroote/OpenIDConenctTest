@@ -7,7 +7,7 @@ namespace OpenIDConnectAuthentication
 {
     public class TokenPair
     {
-        public string access_token { get; set; }
+        public string id_token { get; set; }
         public string refresh_token { get; set; }
 
         public TokenPair()
@@ -15,9 +15,9 @@ namespace OpenIDConnectAuthentication
 
         }
 
-        public TokenPair(string access_token, string refresh_token)
+        public TokenPair(string id_token, string refresh_token)
         {
-            this.access_token = access_token;
+            this.id_token = id_token;
             this.refresh_token = refresh_token;
         }
     }
