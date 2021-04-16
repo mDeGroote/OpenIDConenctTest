@@ -25,13 +25,11 @@ namespace OpenIDConnectAuthentication
     public class AuthenticationController : Controller
     {
         private readonly IJwtService _jwtService;
-        private readonly DataContext _dataContext;
         private readonly IClaimsMapper _claimsMapper;
 
-        public AuthenticationController(IJwtService jwtService, DataContext dataContext, IClaimsMapper claimsMapper)
+        public AuthenticationController(IJwtService jwtService, IClaimsMapper claimsMapper)
         {
             _jwtService = jwtService;
-            _dataContext = dataContext;
             _claimsMapper = claimsMapper;
         }
 
@@ -61,12 +59,15 @@ namespace OpenIDConnectAuthentication
                     User.Claims.Append(new Claim("identityProvider", identityprovider));
 
                 claims.Add(new Claim(OpenIddictConstants.Claims.Subject, User.Claims.First(x => x.Type == _claimsMapper.GetClaim("Name", identityprovider)).Value).SetDestinations(OpenIddictConstants.Destinations.IdentityToken));
-                claims.Add(new Claim("identityProvider", identityprovider).SetDestinations(OpenIddictConstants.Destinations.IdentityToken));
+                claims.Add(new Claim("identityProvider", identityprovider).SetDestinations(OpenIddictConstants.Destinations.IdentityToken));                
 
-                var claimsIdentity = new ClaimsIdentity(claims, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+                var claimsIdentity = new ClaimsIdentity(claims, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme, "subject", "Roles");
+                //for (int i = 1; i <= 100; ++i)
+                //{
+                //    claimsIdentity.AddClaim(new Claim("roles", "role" + i).SetDestinations(OpenIddictConstants.Destinations.IdentityToken));
+                //}
                 var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
                 claimsPrincipal.SetScopes(request.GetScopes());
-                //return FinishLogin(redirect_uri, state, nonce, HttpContext.User.Claims.First(x => x.Type == "IdentityProvider").Value);
                 return SignIn(claimsPrincipal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
             }
             else
@@ -78,26 +79,6 @@ namespace OpenIDConnectAuthentication
             }
 
         }
-
-        //[HttpGet]
-        //[Route("{identityprovider}")]
-        //public IActionResult FinishLogin([FromQuery] Uri returnurl, [FromQuery] string state, [FromQuery]string nonce, string identityprovider)
-        //{
-        //    if (!CheckUri(returnurl))
-        //        return BadRequest(new { Errormessage = "redirect_uri is invalid" });
-
-        //    if (!HttpContext.User.Identity.IsAuthenticated)
-        //    {
-        //        return Challenge(identityprovider);
-        //    }
-
-            //return new ContentResult()
-            //{
-            //    ContentType = "text/html",
-            //    StatusCode = 200,
-            //    Content = "<html><head><title>Submit This Form</title></head><body onload = \"javascript:document.forms[0].submit()\" ><form method = \"post\" action = \"" + returnurl + "\" ><input type =\"hidden\" name = \"nonce\" value = \"" + nonce + "\"/><input type =\"hidden\" name = \"state\" value = \"" + state + "\"/><input type =\"hidden\" name = \"id_token\" value = \"" + id_token + "\"/></form></body></html>"
-            //};
-        //}
 
         [HttpGet]
         [Route("logout")]

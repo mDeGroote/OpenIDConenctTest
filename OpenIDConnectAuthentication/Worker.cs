@@ -39,7 +39,9 @@ namespace OpenIDConnectAuthentication
                 {
                     Permissions.Endpoints.Token,
                     Permissions.ResponseTypes.Code,
+                    Permissions.ResponseTypes.IdToken,
                     Permissions.GrantTypes.AuthorizationCode,
+                    Permissions.GrantTypes.Implicit,
                     Permissions.GrantTypes.RefreshToken,
                     Permissions.Endpoints.Authorization,
                     Permissions.Scopes.Profile,

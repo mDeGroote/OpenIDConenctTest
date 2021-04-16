@@ -66,9 +66,10 @@ namespace OpenIDConnectAuthentication
                         OpenIdConnectConstants.Scopes.Profile);
                     // Enable the token endpoint.
                     options.SetTokenEndpointUris("/jwt/tokens");
-                    options.SetAuthorizationEndpointUris("/authentication").RequireProofKeyForCodeExchange();
-                    options.DisableAccessTokenEncryption();
+                    options.SetAuthorizationEndpointUris("/authentication");//.RequireProofKeyForCodeExchange();
                     options.AllowRefreshTokenFlow();
+                    options.SetRefreshTokenReuseLeeway(TimeSpan.FromMilliseconds(0));
+                    options.SetIdentityTokenLifetime(TimeSpan.FromMinutes(1));
 
                     options.AllowAuthorizationCodeFlow();
 
@@ -77,9 +78,9 @@ namespace OpenIDConnectAuthentication
                         source: Convert.FromBase64String(_configuration["jwt:privatekey"]),
                         bytesRead: out int _
                     );
-                    
+
                     // Register the signing and encryption credentials.
-                    options.AddSigningKey(new RsaSecurityKey(rsa)).AddDevelopmentEncryptionCertificate();
+                    options.AddSigningKey(new RsaSecurityKey(rsa)).AddEncryptionKey(new RsaSecurityKey(rsa));
 
                     // Register the ASP.NET Core host and configure the ASP.NET Core options.
                     options.UseAspNetCore()
