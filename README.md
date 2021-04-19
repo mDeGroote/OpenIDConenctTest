@@ -1,4 +1,4 @@
 # OpenIDConnectTest
 
-Deze branch bevat het prototype dat was gebouwd om de tweede onderzoeksvraag te beantwoorden. 
-Dit project moet aantonen hoe de proxy gebruik kan maken van derde partij identityproviders d.m.v. Openid connect
+Dit project heeft als doel om kennis op te doen van JWT.
+Hierin is geëxperimenteerd met het maken, signen, valideren en encrypten van JWTs.
