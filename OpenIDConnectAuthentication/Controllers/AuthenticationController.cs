@@ -59,16 +59,27 @@ namespace OpenIDConnectAuthentication
                     //remember which Identityprovider the user used to login. Important for claim mapping 
                     identityprovider = User.Claims.First(x => x.Type == "identityProvider").Value;
                 else
-                    User.Claims.Append(new Claim("identityProvider", identityprovider));
+                {
+                    var authenticateresult = await HttpContext.AuthenticateAsync();
+
+                    if(authenticateresult.Succeeded)
+                    {
+                        var claimsIdentity1 = (ClaimsIdentity)authenticateresult.Principal.Identity;
+
+                        if (!claimsIdentity1.HasClaim(c => c.Type == "identityProvider"))
+                        {
+                            claimsIdentity1.AddClaim(new Claim("identityProvider", identityprovider));
+
+                            await HttpContext.SignInAsync(authenticateresult.Principal, authenticateresult.Properties);
+                        }
+                    }
+                }
+
 
                 claims.Add(new Claim(OpenIddictConstants.Claims.Subject, User.Claims.First(x => x.Type == _claimsMapper.GetClaim("Name", identityprovider)).Value).SetDestinations(OpenIddictConstants.Destinations.IdentityToken));
-                claims.Add(new Claim("identityProvider", identityprovider).SetDestinations(OpenIddictConstants.Destinations.IdentityToken));                
+                claims.Add(new Claim("identityProvider", identityprovider).SetDestinations(OpenIddictConstants.Destinations.IdentityToken));           
 
                 var claimsIdentity = new ClaimsIdentity(claims, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme, "subject", "Roles");
-                //for (int i = 1; i <= 100; ++i)
-                //{
-                //    claimsIdentity.AddClaim(new Claim("roles", "role" + i).SetDestinations(OpenIddictConstants.Destinations.IdentityToken));
-                //}
                 var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
                 claimsPrincipal.SetScopes(request.GetScopes());
                 return SignIn(claimsPrincipal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);

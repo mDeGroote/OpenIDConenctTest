@@ -17,6 +17,8 @@ using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Http;
 using AspNet.Security.OpenIdConnect.Primitives;
+using Microsoft.AspNetCore.Authentication;
+using System.Security.Claims;
 
 namespace OpenIDConnectAuthentication
 {
@@ -34,6 +36,36 @@ namespace OpenIDConnectAuthentication
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
+
+            services.AddAuthentication(options =>
+            {
+                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            })
+            .AddCookie(options =>
+            {
+                options.ExpireTimeSpan = TimeSpan.FromDays(1);
+                options.Cookie.Name = "Proxy";
+            })
+            .AddGoogle("Google", options =>
+            {
+                options.ClientId = _configuration["Google:client_id"];
+                options.ClientSecret = _configuration["Google:client_secret"];
+            })
+            .AddOpenIdConnect("Microsoft", options =>
+            {
+                options.Authority = "https://login.live.com";
+                options.ResponseType = Microsoft.IdentityModel.Protocols.OpenIdConnect.OpenIdConnectResponseType.Code;
+                options.ResponseMode = Microsoft.IdentityModel.Protocols.OpenIdConnect.OpenIdConnectResponseMode.FormPost;
+                options.ClientId = _configuration["OpenIDConnect:Microsoft:client_id"];
+                options.ClientSecret = _configuration["OpenIDConnect:Microsoft:client_secret"];
+                options.CallbackPath = "/signin-oidc";             
+            });
+
+            services.ConfigureApplicationCookie(options =>
+            {
+                options.Cookie.Name = "Proxy";
+            });
 
             services.AddDbContext<DataContext>(options =>
             {
@@ -107,29 +139,6 @@ namespace OpenIDConnectAuthentication
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "OpenIDConnectAuthentication", Version = "v1" });
-            });
-
-            services.AddAuthentication(options =>
-            {
-                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-            })
-            .AddCookie(options =>
-            {
-                options.ExpireTimeSpan = TimeSpan.FromDays(1);
-            })
-            .AddGoogle("Google", options =>
-            {
-                options.ClientId = _configuration["Google:client_id"];
-                options.ClientSecret = _configuration["Google:client_secret"];
-            })
-            .AddOpenIdConnect("Microsoft", options =>
-            {
-                options.Authority = "https://login.live.com";
-                options.ResponseType = Microsoft.IdentityModel.Protocols.OpenIdConnect.OpenIdConnectResponseType.Code;
-                options.ResponseMode = Microsoft.IdentityModel.Protocols.OpenIdConnect.OpenIdConnectResponseMode.FormPost;
-                options.ClientId = _configuration["OpenIDConnect:Microsoft:client_id"];
-                options.ClientSecret = _configuration["OpenIDConnect:Microsoft:client_secret"];
-                options.CallbackPath = "/signin-oidc";
             });
         }
 
